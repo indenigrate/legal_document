@@ -1,3 +1,4 @@
+import os
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import Send
 from langgraph.checkpoint.memory import MemorySaver
@@ -19,6 +20,12 @@ def assign_workers(state: DocumentState):
         for i, s in enumerate(state["sections_to_write"])
     ]
 
+def skip_if_exists(state: DocumentState):
+    """Check if the document already exists to skip generation."""
+    if os.path.exists(state["file_path"]):
+        return "wait_for_query"
+    return "planner"
+
 # Initialize Graph
 builder = StateGraph(DocumentState)
 
@@ -31,7 +38,7 @@ builder.add_node("thinker", thinker_node)
 builder.add_node("answer", answer_node)
 
 # Define Flow
-builder.add_edge(START, "planner")
+builder.add_conditional_edges(START, skip_if_exists)
 builder.add_conditional_edges("planner", assign_workers, ["writer"])
 builder.add_edge("writer", "aggregator")
 builder.add_edge("aggregator", "wait_for_query")

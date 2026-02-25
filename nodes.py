@@ -17,14 +17,29 @@ def writer_node(state: WorkerState):
     """Generates the content for a single section."""
     topic = state["section_topic"]
     index = state["index"]
-    prompt = f"Write a comprehensive, professional legal text for the section: '{topic}'. Be dense and detailed."
+    prompt = f"""Write a comprehensive, professional legal text for the section: '{topic}'. 
+
+STRICT REQUIREMENTS:
+1. Output ONLY the legal text for this section.
+2. DO NOT include any preamble, intro, or "Here is the text".
+3. DO NOT include any signatures, footer notes, metadata, or JSON-like structures.
+4. Output raw text only, no markdown code blocks wrapping the content.
+5. Be dense and detailed in formal legalese.
+"""
     response = flash_llm.invoke(prompt)
     
+    # Extract only the text content, handling potential list of content blocks
+    content = response.content
+    if isinstance(content, list):
+        content = "".join([block.get("text", "") if isinstance(block, dict) else str(block) for block in content])
+    elif not isinstance(content, str):
+        content = str(content)
+        
     # Return the section result to be aggregated later
     return {
         "generated_sections": [{
             "title": topic,
-            "content": response.content,
+            "content": content,
             "index": index
         }],
         "completed_sections": 1
@@ -42,7 +57,9 @@ def aggregator_node(state: DocumentState):
         f.write(f"# {state['contract_topic']}\n\n")
         for sec in sorted_sections:
             f.write(f"## {sec['title']}\n\n")
-            f.write(f"{sec['content']}\n\n")
+            # Ensure content is a clean string
+            content = sec['content']
+            f.write(f"{content}\n\n")
             
     return {} # State update handled via file system
 
@@ -64,10 +81,15 @@ def thinker_node(state: DocumentState):
 Question: {query}
 
 Think step-by-step through the document to find the relevant clauses and analyze them for the final answer. 
-Output your detailed thought process ONLY. No final answer yet."""
+Output your detailed thought process ONLY. No final answer yet.
+"""
 
     response = pro_llm.invoke(prompt)
-    return {"thought_process": response.content}
+    content = response.content
+    if isinstance(content, list):
+        content = "".join([block.get("text", "") if isinstance(block, dict) else str(block) for block in content])
+
+    return {"thought_process": content}
 
 def answer_node(state: DocumentState):
     """Synthesizes the reasoning into a final answer."""
@@ -79,7 +101,12 @@ def answer_node(state: DocumentState):
 Thought Process:
 {thought_process}
 
-User Question: {query}"""
+User Question: {query}
+"""
 
     response = flash_llm.invoke(prompt)
-    return {"final_answer": response.content}
+    content = response.content
+    if isinstance(content, list):
+        content = "".join([block.get("text", "") if isinstance(block, dict) else str(block) for block in content])
+
+    return {"final_answer": content}

@@ -8,35 +8,41 @@ def run_legal_app():
     config = {"configurable": {"thread_id": thread_id}}
     
     # 2. Initial State
+    file_path = "./output/legal_document.md"
     initial_state = {
         "contract_topic": "Enterprise SaaS Master Service Agreement",
-        "file_path": "./output/legal_document.md",
+        "file_path": file_path,
         "completed_sections": 0,
         "generated_sections": [],
         "sections_to_write": []
     }
     
-    print("--- Starting Document Generation ---")
+    # Check if file exists to provide better UI feedback
+    if os.path.exists(file_path):
+        print(f"--- Document already exists at {file_path}. Skipping generation. ---")
+    else:
+        print("--- Starting Document Generation ---")
     
     # Run until interrupt
-    # If the thread already exists, we might need to check current state
-    # For a fresh run, we invoke with initial_state
     try:
-        # Check if we are already interrupted
         state = graph.get_state(config)
         if state.next:
             print("Resuming from previous pause...")
         else:
+            # This will either run the whole generation OR skip to interrupt
             graph.invoke(initial_state, config)
     except Exception as e:
-        # If it's the first time and it interrupts, it might raise or return
+        # Expected interrupt or error
         pass
 
     # Re-fetch state to check for interrupt
     state = graph.get_state(config)
     
     if state.next and "wait_for_query" in state.next:
-        print(f"\nDocument generated at: {initial_state['file_path']}")
+        if not os.path.exists(file_path):
+             print("\nWarning: Document generation interrupted or failed to save.")
+        
+        print(f"\nDocument ready at: {file_path}")
         user_query = input("\nPlease enter your legal question about the document: ")
         
         print("\n--- Starting CoT Analysis ---")
@@ -52,7 +58,7 @@ def run_legal_app():
         print("\n--- Final Answer ---")
         print(final_state.get("final_answer"))
     else:
-        print("Graph execution finished or failed.")
+        print(f"Graph execution finished or reached unexpected state. Next nodes: {state.next}")
 
 if __name__ == "__main__":
     run_legal_app()
