@@ -1,7 +1,7 @@
 # Legal Document Generator and QA System
 
 A robust legal document generation and analysis system built with LangGraph and Gemini 3.0 models. It uses a Map-Reduce architecture for large-scale document generation and a Chain-of-Thought (CoT) reasoning loop for legal QA.
-
+![Workflow Graph](updated_workflow_graph.png)
 ## Setup
 
 ### Prerequisites

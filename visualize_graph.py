@@ -1,39 +1,31 @@
 import os
 import sys
-from dotenv import load_dotenv
 
-# Add current directory to path
+# Ensure the current directory is in the path so graph.py can be imported
 sys.path.append(os.getcwd())
 
-# Load environment variables
-load_dotenv()
+from graph import graph
 
-def visualize():
-    print("--- Initializing Legal Graph for Visualization ---")
+def generate_graph_png(output_filename="updated_workflow_graph.png"):
+    print(f"Generating updated graph flow and saving to {output_filename}...")
     
     try:
-        from graph import graph
+        # Get the drawable representation of the compiled graph
+        drawable_graph = graph.get_graph()
         
-        # We use draw_mermaid_png() because it produces a superior, professional diagram 
-        # compared to the standard graphviz output, and it handles complex 
-        # parallel nodes (Map-Reduce) more cleanly.
-        print("Generating high-quality workflow diagram (PNG)...")
-        try:
-            # This generates a PNG via the Mermaid engine
-            png_bytes = graph.get_graph().draw_mermaid_png()
-            with open("workflow_graph.png", "wb") as f:
-                f.write(png_bytes)
-            print("\nSUCCESS: Saved 'workflow_graph.png'")
-            print("This PNG shows the Orchestrator-Worker (Map-Reduce) and Sequential CoT patterns.")
-        except Exception as e:
-            print(f"\nFAILED to generate PNG: {e}")
-            print("Falling back to ASCII (Check your internet connection for Mermaid PNG generation):")
-            print(graph.get_graph().draw_ascii())
-
-    except ImportError as e:
-        print(f"Error: Could not import graph. {e}")
+        # Generate the PNG image bytes using Mermaid
+        png_bytes = drawable_graph.draw_mermaid_png()
+        
+        # Write the bytes to a file
+        with open(output_filename, "wb") as f:
+            f.write(png_bytes)
+            
+        print(f"SUCCESS: Successfully saved the new graph to '{output_filename}'.")
+        
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"FAILED to generate PNG. Error: {e}")
+        print("Fallback to ASCII representation:")
+        print(drawable_graph.draw_ascii())
 
 if __name__ == "__main__":
-    visualize()
+    generate_graph_png()

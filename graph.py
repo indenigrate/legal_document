@@ -38,7 +38,11 @@ builder.add_node("thinker", thinker_node)
 builder.add_node("answer", answer_node)
 
 # Define Flow
-builder.add_conditional_edges(START, skip_if_exists)
+builder.add_conditional_edges(
+    START, 
+    skip_if_exists,
+    {"planner": "planner", "wait_for_query": "wait_for_query"}
+)
 builder.add_conditional_edges("planner", assign_workers, ["writer"])
 builder.add_edge("writer", "aggregator")
 builder.add_edge("aggregator", "wait_for_query")
