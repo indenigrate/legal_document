@@ -69,19 +69,22 @@ def wait_for_query_node(state: DocumentState):
     return {"qa_query": query}
 
 def thinker_node(state: DocumentState):
-    """Generates Chain of Thought reasoning."""
+    """Generates a concise internal reasoning scratchpad."""
     with open(state["file_path"], "r") as f:
         doc_text = f.read()
     
     query = state["qa_query"]
-    prompt = f"""You are an expert legal analyst. Below is a legal document.
+    prompt = f"""You are an expert legal analyst reviewing the document below.
 ---
 {doc_text}
 ---
 Question: {query}
 
-Think step-by-step through the document to find the relevant clauses and analyze them for the final answer. 
-Output your detailed thought process ONLY. No final answer yet.
+STRICT INSTRUCTIONS:
+1. Provide a internal reasoning scratchpad of ONLY 3-5 short bullet points.
+2. Focus on: Where in the document is the answer? What clauses are relevant? What is the core logic for the answer?
+3. DO NOT provide the final answer yet.
+4. Keep it concise and analytical.
 """
 
     response = pro_llm.invoke(prompt)
