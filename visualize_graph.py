@@ -14,26 +14,21 @@ def visualize():
     try:
         from graph import graph
         
-        # 1. Try to generate PNG (Requires pygraphviz or mermaid.ink API access)
-        print("Generating graph visualization...")
+        # We use draw_mermaid_png() because it produces a superior, professional diagram 
+        # compared to the standard graphviz output, and it handles complex 
+        # parallel nodes (Map-Reduce) more cleanly.
+        print("Generating high-quality workflow diagram (PNG)...")
         try:
+            # This generates a PNG via the Mermaid engine
             png_bytes = graph.get_graph().draw_mermaid_png()
             with open("workflow_graph.png", "wb") as f:
                 f.write(png_bytes)
-            print("Successfully saved visualization to 'workflow_graph.png'")
+            print("\nSUCCESS: Saved 'workflow_graph.png'")
+            print("This PNG shows the Orchestrator-Worker (Map-Reduce) and Sequential CoT patterns.")
         except Exception as e:
-            print(f"Could not generate PNG: {e}")
-            print("Ensure you have 'pygraphviz' installed or internet access for mermaid.ink.")
-
-        # 2. Always generate Mermaid text as fallback
-        print("Generating Mermaid syntax...")
-        mermaid_text = graph.get_graph().draw_mermaid()
-        with open("workflow_graph.mmd", "w") as f:
-            f.write(mermaid_text)
-        
-        print("Successfully saved Mermaid syntax to 'workflow_graph.mmd'")
-        print("
-TIP: You can paste the content of 'workflow_graph.mmd' into https://mermaid.live/ to view it online.")
+            print(f"\nFAILED to generate PNG: {e}")
+            print("Falling back to ASCII (Check your internet connection for Mermaid PNG generation):")
+            print(graph.get_graph().draw_ascii())
 
     except ImportError as e:
         print(f"Error: Could not import graph. {e}")
